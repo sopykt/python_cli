@@ -276,6 +276,45 @@ def remove(
             # Otherwise, communicates that the operation was canceled.
             typer.echo("Operation canceled")
 
+# define remove_all() as a Typer command using the @app.command() decorator 
+# with clear as the command name.
+@app.command(name="clear")
+def remove_all(
+    # define force as a Typer Option. It’s a required option of the Boolean type.
+    # The prompt argument asks the user to enter a proper value to force,
+    # which can be either y or n.
+    force: bool = typer.Option(
+        ...,
+        prompt="Delete all to-dos?",
+        # provides a help message for the force option.
+        help="Force deletion without confirmation.",
+    ),
+) -> None:
+    """Remove all to-dos."""
+    # gets the usual Todoer instance.
+    todoer = get_todoer()
+    # checks if force is True. 
+    if force:
+        # If so, then the if code block removes all the to-dos from the database using .remove_all().
+        error = todoer.remove_all().error
+        # If something goes wrong during this process,
+        if error:
+            # the application prints an error message
+            typer.secho(
+                f'Removing to-dos failed with "{ERRORS[error]}"',
+                fg=typer.colors.RED,
+            )
+            # and exits.
+            raise typer.Exit(1)
+        # Otherwise,
+        else:
+            # it prints a success message.
+            typer.secho("All to-dos were removed", fg=typer.colors.GREEN)
+    else:
+        # runs if the user cancels the remove operation by supplying a false value,
+        # indicating no, to force.
+        typer.echo("Operation canceled")
+
 # define _version_callback(). This function takes a Boolean argument called value. 
 # If value is True, then the function prints the application’s name and version using echo(). 
 # After that, it raises a typer.Exit exception to exit the application cleanly.
