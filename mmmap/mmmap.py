@@ -86,3 +86,28 @@ class Todoer:
         write = self._db_handler.write_todos(read.todo_list)
         # returns a CurrentTodo instance with the target to-do and a return code indicating how the operation went.
         return CurrentTodo(todo, write.error)
+
+    # defines .remove(). This method takes a to-do ID as an argument 
+    # and removes the corresponding to-do from the database.
+    def remove(self, todo_id: int) -> CurrentTodo:
+        """Remove a to-do from the database using its id or index."""
+        # reads the to-do list from the database by calling .read_todos() on the database handler.
+        read = self._db_handler.read_todos()
+        # checks if any error occurs during the reading process. 
+        if read.error:
+            # If so, then returns a named tuple, CurrentTodo, holding an empty to-do 
+            # and the corresponding error code.
+            return CurrentTodo({}, read.error)
+        # starts a try … except statement to catch any invalid ID coming from the user’s input.
+        try:
+            # removes the to-do at index todo_id - 1 from the to-do list.
+            todo = read.todo_list.pop(todo_id - 1)
+        # If an IndexError occurs during this operation, 
+        except IndexError:
+            # then returns a CurrentTodo instance with an empty to-do and the corresponding error code.
+            return CurrentTodo({}, ID_ERROR)
+        # writes the updated to-do list back to the database.
+        write = self._db_handler.write_todos(read.todo_list)
+        # returns a CurrentTodo tuple holding the removed to-do 
+        # and a return code indicating a successful operation.
+        return CurrentTodo(todo, write.error)

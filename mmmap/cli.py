@@ -205,6 +205,77 @@ def set_done(todo_id: int = typer.Argument(...)) -> None:
             fg=typer.colors.GREEN,
         )
 
+# define remove() as a Typer CLI command.
+@app.command()
+def remove(
+    # defines todo_id as an argument of type int. 
+    # In this case, todo_id is a required instance of typer.Argument.
+    todo_id: int = typer.Argument(...),
+    # defines force as an option for the remove command. 
+    # It’s a Boolean option that allows you to delete a to-do without confirmation.
+    force: bool = typer.Option(
+        # This option defaults to False
+        False,
+        # and its flags are --force and -f.
+        "--force",
+        "-f",
+        # defines a help message for the force option.
+        help="Force deletion without confirmation.",
+    ),
+) -> None:
+    """Remove a to-do using its TODO_ID."""
+    # creates the required Todoer instance.
+    todoer = get_todoer()
+
+    # define an inner function called _remove(). 
+    # It’s a helper function that allows you to reuse the remove functionality.
+    def _remove():
+        # The function removes a to-do using its ID. To do that, it calls .remove() on todoer.
+        todo, error = todoer.remove(todo_id)
+        if error:
+            typer.secho(
+                f'Removing to-do # {todo_id} failed with "{ERRORS[error]}"',
+                fg=typer.colors.RED,
+            )
+            raise typer.Exit(1)
+        else:
+            typer.secho(
+                f"""to-do # {todo_id}: '{todo["Description"]}' was removed""",
+                fg=typer.colors.GREEN,
+            )
+
+    # checks the value of force. A True value means that the user wants to remove the to-do 
+    # without confirmation.
+    if force:
+        # In this situation, calls _remove() to run the remove operation.
+        _remove()
+    # starts an else clause that runs if force is False.
+    else:
+        # gets the entire to-do list from the database.
+        todo_list = todoer.get_todo_list()
+        # define a try … except statement that retrieves the desired to-do from the list.
+        try:
+            todo = todo_list[todo_id - 1]
+        # If an IndexError occurs,
+        except IndexError:
+            # then prints an error message,
+            typer.secho("Invalid TODO_ID", fg=typer.colors.RED)
+            # and exits the application.
+            raise typer.Exit(1)
+        # call Typer’s confirm() and store the result in delete. 
+        # This function provides an alternative way to ask for confirmation. 
+        delete = typer.confirm(
+            # It allows you to use a dynamically created confirmation prompt like the following line.
+            f"Delete to-do # {todo_id}: {todo['Description']}?"
+        )
+        # checks if delete is True,
+        if delete:
+            # in which case calls _remove().
+            _remove()
+        else:
+            # Otherwise, communicates that the operation was canceled.
+            typer.echo("Operation canceled")
+
 # define _version_callback(). This function takes a Boolean argument called value. 
 # If value is True, then the function prints the application’s name and version using echo(). 
 # After that, it raises a typer.Exit exception to exit the application cleanly.
