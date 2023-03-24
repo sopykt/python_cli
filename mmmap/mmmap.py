@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple
 
-from mmmap import DB_READ_ERROR
+from mmmap import DB_READ_ERROR, ID_ERROR
 from mmmap.database import DatabaseHandler
 
 # create a subclass of typing.NamedTuple called CurrentTodo with two fields todo and error
@@ -48,4 +48,41 @@ class Todoer:
         # writes the updated to-do list back to the database by calling .write_todos() on the database handler.
         write = self._db_handler.write_todos(read.todo_list)
         # returns an instance of CurrentTodo with the current to-do and an appropriate return code.
+        return CurrentTodo(todo, write.error)
+
+    def get_todo_list(self) -> List[Dict[str, Any]]:
+        """Return the current to-do list."""
+        # first get the entire to-do list from the database by calling .read_todos() on the database handler.
+        # The call to .read_todos() returns a named tuple, DBResponse, containing the to-do list and a return code.
+        read = self._db_handler.read_todos()
+        # However, you just need the to-do list, so .get_todo_list() returns the .todo_list field only.
+        return read.todo_list
+
+    # defines .set_done(). The method takes an argument called todo_id, which holds an integer 
+    # representing the ID of the to-do you want to mark as done. The to-do ID is the number associated with 
+    # a given to-do when you list your to-dos using the list command. 
+    # Since you’re using a Python list to store the to-dos, you can turn this ID into a zero-based index 
+    # and use it to retrieve the required to-do from the list.
+    def set_done(self, todo_id: int) -> CurrentTodo:
+        """Set a to-do as done."""
+        # reads all the to-dos by calling .read_todos() on the database handler.
+        read = self._db_handler.read_todos()
+        # checks if any error occurs during the reading. 
+        if read.error:
+            # If so, then returns a named tuple, CurrentTodo, with an empty to-do and the error.
+            return CurrentTodo({}, read.error)
+        # starts a try … except statement to catch invalid to-do IDs that translate to invalid indices 
+        # in the underlying to-do list. 
+        try:
+            todo = read.todo_list[todo_id - 1]
+        # If an IndexError occurs, 
+        except IndexError:
+            # then returns a CurrentTodo instance with an empty to-do and the corresponding error code.
+            return CurrentTodo({}, ID_ERROR)
+        # assigns True to the "Done" key in the target to-do dictionary. 
+        # This way, you’re setting the to-do as done.
+        todo["Done"] = True
+        # writes the update back to the database by calling .write_todos() on the database handler.
+        write = self._db_handler.write_todos(read.todo_list)
+        # returns a CurrentTodo instance with the target to-do and a return code indicating how the operation went.
         return CurrentTodo(todo, write.error)

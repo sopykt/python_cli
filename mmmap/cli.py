@@ -130,6 +130,81 @@ def add(
         )
 # Now you can go back to your terminal and give your add command a try: `python -m mmmap add Get some milk -p 1`
 
+# define list_all() as a Typer command using the @app.command() decorator. 
+# The name argument to this decorator sets a custom name for the command, which is list here. 
+# Note that list_all() doesn’t take any argument or option. It just lists the to-dos 
+# when the user runs list from the command line.
+@app.command(name="list")
+def list_all() -> None:
+    """List all to-dos."""
+    # gets the Todoer instance that you’ll use.
+    todoer = get_todoer()
+    # gets the to-do list from the database by calling .get_todo_list() on todoer.
+    todo_list = todoer.get_todo_list()
+    # define a conditional statement to check if there’s at least one to-do in the list. 
+    # If not, then the if code block prints an error message to the screen and exits the application.
+    if len(todo_list) == 0:
+        typer.secho(
+            "There are no tasks in the to-do list yet", fg=typer.colors.RED
+        )
+        raise typer.Exit()
+    # prints a top-level header to present the to-do list. In this case, secho() takes an additional 
+    # Boolean argument called bold, which enables you to display text in a bolded font format.
+    typer.secho("\nto-do list:\n", fg=typer.colors.BLUE, bold=True)
+    # define and print the required columns to display the to-do list in a tabular format.
+    columns = (
+        "ID.  ",
+        "| Priority  ",
+        "| Done  ",
+        "| Description  ",
+    )
+    headers = "".join(columns)
+    typer.secho(headers, fg=typer.colors.BLUE, bold=True)
+    typer.secho("-" * len(headers), fg=typer.colors.BLUE)
+    # run a for loop to print every single to-do on its own row with appropriate padding and separators.
+    for id, todo in enumerate(todo_list, 1):
+        desc, priority, done = todo.values()
+        typer.secho(
+            f"{id}{(len(columns[0]) - len(str(id))) * ' '}"
+            f"| ({priority}){(len(columns[1]) - len(str(priority)) - 4) * ' '}"
+            f"| {done}{(len(columns[2]) - len(str(done)) - 2) * ' '}"
+            f"| {desc}",
+            fg=typer.colors.BLUE,
+        )
+    # prints a line of dashes with a final line feed character (\n) to visually separate the to-do list 
+    # from the next command-line prompt.
+    typer.secho("-" * len(headers) + "\n", fg=typer.colors.BLUE)
+    # Then run the application with the command `python -m mmmap list`
+
+# define set_done() as a Typer command with the usual @app.command() decorator. 
+# In this case, you use complete for the command name. 
+@app.command(name="complete")
+# The set_done() function takes an argument called todo_id, 
+# which defaults to an instance of typer.Argument. 
+# This instance will work as a required command-line argument.
+def set_done(todo_id: int = typer.Argument(...)) -> None:
+    """Complete a to-do by setting it as done using its TODO_ID."""
+    # gets the usual Todoer instance.
+    todoer = get_todoer()
+    # sets the to-do with the specific todo_id as done by calling .set_done() on todoer.
+    todo, error = todoer.set_done(todo_id)
+    # checks if any error occurs during the process. 
+    if error:
+        # If so, then print an appropriate error message 
+        typer.secho(
+            f'Completing to-do # "{todo_id}" failed with "{ERRORS[error]}"',
+            fg=typer.colors.RED,
+        )
+        # and exit the application with an exit code of 1.
+        raise typer.Exit(1)
+    # If no error occurs, 
+    else:
+        # then print a success message in green font.
+        typer.secho(
+            f"""to-do # {todo_id} "{todo['Description']}" completed!""",
+            fg=typer.colors.GREEN,
+        )
+
 # define _version_callback(). This function takes a Boolean argument called value. 
 # If value is True, then the function prints the application’s name and version using echo(). 
 # After that, it raises a typer.Exit exception to exit the application cleanly.
