@@ -29,8 +29,9 @@ def init(
     ),
 ) -> None:
     """Initialize the mmmap database."""
+    abs_db_path = Path(db_path).resolve()
     # calls init_app() to create the application’s configuration file and to-do database.
-    app_init_error = config.init_app(db_path)
+    app_init_error = config.init_app(abs_db_path)
     # check if the call to init_app() returns an error. 
     # If so, lines 38 to 41 print an error message. 
     # Line 42 exits the app with a typer.Exit exception and an exit code of 1 to signal 
@@ -42,7 +43,7 @@ def init(
         )
         raise typer.Exit(1)
     # calls init_database() to initialize the database with an empty to-do list.
-    db_init_error = database.init_database(Path(db_path))
+    db_init_error = database.init_database(abs_db_path)
     # check if the call to init_database() returns an error. 
     # If so, then lines 49 to 52 display an error message, and line 53 exits the application. 
     # Otherwise, line 55 prints a success message in green text.
@@ -53,7 +54,7 @@ def init(
         )
         raise typer.Exit(1)
     else:
-        typer.secho(f"The to-do database is {db_path}", fg=typer.colors.GREEN)
+        typer.secho(f"The to-do database is {abs_db_path}", fg=typer.colors.GREEN)
         
 # To print the messages in this code (above), you use typer.secho(). 
 # This function takes a foreground argument, fg, 
